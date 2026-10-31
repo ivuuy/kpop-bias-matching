@@ -1,0 +1,508 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>✨ Kpop女豆本命偶像匹配</title>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        :root {
+            --primary: #FF6B9D;
+            --secondary: #C77DFF;
+            --bg: #07071a;
+            --text: #ffffff;
+            --muted: rgba(255,255,255,0.55);
+        }
+
+        body {
+            font-family: 'Noto Sans SC', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* ── Stars ── */
+        #stars { position: fixed; inset: 0; pointer-events: none; z-index: 0; }
+        .star {
+            position: absolute; border-radius: 50%; background: #fff;
+            animation: twinkle var(--d, 3s) ease-in-out infinite;
+            animation-delay: var(--dl, 0s);
+        }
+        @keyframes twinkle {
+            0%,100% { opacity: .15; transform: scale(1); }
+            50%      { opacity: 1;   transform: scale(1.6); }
+        }
+
+        /* ── Orbs ── */
+        .orb {
+            position: fixed; border-radius: 50%; filter: blur(80px);
+            pointer-events: none; z-index: 0; opacity: .25;
+        }
+        .orb1 { width: 400px; height: 400px; background: #a020f0; top: -100px; left: -100px; }
+        .orb2 { width: 350px; height: 350px; background: #FF1493; bottom: -80px; right: -80px; }
+
+        /* ── Layout ── */
+        .container {
+            position: relative; z-index: 1;
+            max-width: 560px; margin: 0 auto; padding: 24px 20px;
+            min-height: 100vh; display: flex; flex-direction: column; justify-content: center;
+        }
+
+        /* ── Screens ── */
+        .screen { display: none; }
+        .screen.active { display: block; animation: fadeUp .45s ease; }
+        @keyframes fadeUp {
+            from { opacity: 0; transform: translateY(22px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+
+        /* ── Welcome ── */
+        .welcome-top { text-align: center; margin-bottom: 28px; }
+        .floating { font-size: 3.2rem; display: block; margin-bottom: 14px;
+            animation: float 3.5s ease-in-out infinite; }
+        @keyframes float {
+            0%,100% { transform: translateY(0); }
+            50%      { transform: translateY(-10px); }
+        }
+        .title {
+            font-size: 2rem; font-weight: 700; line-height: 1.3;
+            background: linear-gradient(135deg, #FF6B9D, #C77DFF);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .subtitle { color: var(--muted); font-size: .85rem; margin-top: 6px; }
+
+        /* ── Card ── */
+        .card {
+            background: rgba(255,255,255,.055);
+            border: 1px solid rgba(255,255,255,.1);
+            border-radius: 20px; padding: 22px;
+            backdrop-filter: blur(12px);
+            margin-bottom: 16px;
+        }
+
+        /* ── Group tags ── */
+        .tags { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 14px; }
+        .tag {
+            background: rgba(255,107,157,.13);
+            border: 1px solid rgba(255,107,157,.3);
+            border-radius: 20px; padding: 3px 11px;
+            font-size: .72rem; color: #FF6B9D;
+        }
+
+        /* ── Buttons ── */
+        .btn {
+            width: 100%; padding: 15px; border-radius: 50px; border: none;
+            cursor: pointer; font-size: .95rem;
+            font-family: 'Noto Sans SC', sans-serif; font-weight: 500;
+            transition: all .3s ease;
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, #FF6B9D, #C77DFF); color: #fff;
+        }
+        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 10px 28px rgba(255,107,157,.35); }
+        .btn-ghost {
+            background: rgba(255,255,255,.08); color: #fff;
+            border: 1px solid rgba(255,255,255,.18); margin-top: 10px;
+        }
+        .btn-ghost:hover { background: rgba(255,255,255,.14); }
+
+        /* ── Progress ── */
+        .prog-label { font-size: .75rem; color: var(--muted); margin-bottom: 7px; }
+        .prog-track { background: rgba(255,255,255,.1); border-radius: 10px; height: 5px; margin-bottom: 22px; overflow: hidden; }
+        .prog-fill { height: 100%; background: linear-gradient(90deg, #FF6B9D, #C77DFF); border-radius: 10px; transition: width .5s ease; }
+
+        /* ── Question ── */
+        .q-num { font-size: .75rem; color: #FF6B9D; font-weight: 600; margin-bottom: 6px; letter-spacing: .06em; }
+        .q-text { font-size: 1.2rem; font-weight: 600; margin-bottom: 18px; line-height: 1.5; }
+
+        /* ── Options ── */
+        .opts { display: grid; gap: 9px; }
+        .opts.c2 { grid-template-columns: 1fr 1fr; }
+        .opts.c3 { grid-template-columns: 1fr 1fr 1fr; }
+        .opts.c4 { grid-template-columns: 1fr 1fr 1fr 1fr; }
+
+        .opt {
+            padding: 11px 13px; border-radius: 12px;
+            border: 1px solid rgba(255,255,255,.13);
+            background: rgba(255,255,255,.05);
+            color: #fff; cursor: pointer; font-size: .82rem;
+            font-family: 'Noto Sans SC', sans-serif;
+            transition: all .2s ease; text-align: center; line-height: 1.4;
+        }
+        .opt:hover { background: rgba(255,107,157,.18); border-color: rgba(255,107,157,.45); transform: translateY(-1px); }
+        .opt.selected { background: linear-gradient(135deg, rgba(255,107,157,.3), rgba(199,125,255,.3)); border-color: #FF6B9D; }
+
+        /* ── Loading ── */
+        .load-wrap { text-align: center; padding: 50px 0; }
+        .spinner {
+            width: 72px; height: 72px; border-radius: 50%;
+            border: 4px solid rgba(255,255,255,.1);
+            border-top-color: #FF6B9D; border-right-color: #C77DFF;
+            animation: spin 1s linear infinite; margin: 0 auto 22px;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .load-title { font-size: 1.2rem; font-weight: 600; margin-bottom: 8px; }
+        .load-sub { color: var(--muted); font-size: .85rem; }
+
+        /* ── Result hero ── */
+        .result-hero {
+            border-radius: 20px; padding: 36px 22px;
+            text-align: center; margin-bottom: 16px;
+            position: relative; overflow: hidden;
+        }
+        .hero-emoji { font-size: 3rem; margin-bottom: 12px; display: block; }
+        .hero-name { font-size: 2.2rem; font-weight: 700; margin-bottom: 6px; }
+        .hero-traits { font-size: .8rem; opacity: .8; letter-spacing: .04em; }
+
+        /* ── Members grid ── */
+        .members-grid { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; justify-content: center; }
+        .member-card {
+            background: rgba(255,255,255,.1);
+            border: 1px solid rgba(255,255,255,.2);
+            border-radius: 12px; padding: 8px 12px;
+            text-align: center; min-width: 72px; flex: 1 1 72px; max-width: 100px;
+        }
+        .member-name { font-size: .85rem; font-weight: 600; margin-bottom: 2px; }
+        .member-pos { font-size: .68rem; opacity: .7; }
+
+        /* ── Match bars ── */
+        .match-item { display: flex; align-items: center; gap: 10px; margin-bottom: 11px; }
+        .match-name { width: 110px; font-size: .78rem; flex-shrink: 0; }
+        .bar-track { flex: 1; background: rgba(255,255,255,.1); border-radius: 8px; height: 7px; overflow: hidden; }
+        .bar-fill { height: 100%; background: linear-gradient(90deg, #FF6B9D, #C77DFF); border-radius: 8px; width: 0%; transition: width 1s ease; }
+        .bar-pct { width: 36px; font-size: .75rem; color: var(--muted); text-align: right; }
+
+        /* ── Confetti ── */
+        .cf {
+            position: fixed; top: -12px; border-radius: 2px;
+            animation: fall linear forwards; z-index: 999;
+        }
+        @keyframes fall {
+            0%   { transform: translateY(0) rotate(0deg); opacity: 1; }
+            100% { transform: translateY(105vh) rotate(720deg); opacity: 0; }
+        }
+    </style>
+</head>
+<body>
+
+<div id="stars"></div>
+<div class="orb orb1"></div>
+<div class="orb orb2"></div>
+
+<div class="container">
+
+    <!-- ══ WELCOME ══ -->
+    <div id="s-welcome" class="screen active">
+        <div class="welcome-top">
+            <span class="floating">✨💕🎤</span>
+            <h1 class="title">Kpop女豆<br>本命偶像匹配</h1>
+            <p class="subtitle">回答 4 个问题，找到你的本命女团</p>
+        </div>
+
+        <div class="card">
+            <p style="font-size:.85rem;color:var(--muted);line-height:1.7">
+                通过你的星座、想要的定位、MBTI 和喜欢的颜色，<br>为你匹配最适合的 Kpop 女豆本命！
+            </p>
+            <div class="tags">
+                <span class="tag">BLACKPINK</span><span class="tag">aespa</span>
+                <span class="tag">IVE</span><span class="tag">ITZY</span>
+                <span class="tag">NMIXX</span><span class="tag">TWICE</span>
+                <span class="tag">(G)I-DLE</span><span class="tag">BABYMONSTER</span>
+                <span class="tag">KISS OF LIFE</span><span class="tag">Hearts2Hearts</span>
+                <span class="tag">KIIIKIII</span><span class="tag">MEOVV</span>
+                <span class="tag">ILLIT</span><span class="tag">LE SSERAFIM</span>
+            </div>
+        </div>
+
+        <button class="btn btn-primary" onclick="startQuiz()">开始匹配 ✨</button>
+    </div>
+
+    <!-- ══ QUESTION ══ -->
+    <div id="s-question" class="screen">
+        <div class="prog-label" id="prog-label">问题 1 / 4</div>
+        <div class="prog-track"><div class="prog-fill" id="prog-fill" style="width:25%"></div></div>
+
+        <div class="card">
+            <div class="q-num" id="q-num">Q1</div>
+            <div class="q-text" id="q-text"></div>
+            <div class="opts" id="opts"></div>
+        </div>
+    </div>
+
+    <!-- ══ LOADING ══ -->
+    <div id="s-loading" class="screen">
+        <div class="load-wrap">
+            <div class="spinner"></div>
+            <div class="load-title">正在匹配中…</div>
+            <div class="load-sub" id="load-sub">分析你的星座特质…</div>
+        </div>
+    </div>
+
+    <!-- ══ RESULT ══ -->
+    <div id="s-result" class="screen">
+        <div class="result-hero" id="r-hero">
+            <span class="hero-emoji" id="r-emoji"></span>
+            <div class="hero-name" id="r-name"></div>
+            <div class="hero-traits" id="r-traits"></div>
+            <div class="members-grid" id="r-members"></div>
+        </div>
+
+        <div class="card">
+            <h3 style="font-size:.95rem;margin-bottom:10px">✨ 你的本命解读</h3>
+            <p style="font-size:.875rem;color:var(--muted);line-height:1.75" id="r-desc"></p>
+        </div>
+
+        <div class="card">
+            <h3 style="font-size:.95rem;margin-bottom:14px">📊 匹配度排名</h3>
+            <div id="r-bars"></div>
+        </div>
+
+        <button class="btn btn-ghost" onclick="resetQuiz()">重新测试 🔄</button>
+    </div>
+
+</div>
+
+<script>
+/* ───── Stars ───── */
+const sf = document.getElementById('stars');
+for (let i = 0; i < 120; i++) {
+    const s = document.createElement('div');
+    s.className = 'star';
+    const sz = Math.random() * 2.5 + .5;
+    s.style.cssText = `width:${sz}px;height:${sz}px;left:${Math.random()*100}%;top:${Math.random()*100}%;--d:${(Math.random()*3+2).toFixed(1)}s;--dl:${(Math.random()*6).toFixed(1)}s`;
+    sf.appendChild(s);
+}
+
+/* ───── Data ───── */
+const GROUPS = {
+    'BLACKPINK':      { grad:'linear-gradient(135deg,#150010,#FF1493,#2d0020)', emoji:'🖤🌸', traits:'强势 · 优雅 · 时尚 · 魅力',    desc:'恭喜！你的本命是 BLACKPINK！你拥有无可挑剔的气场和时尚品味，骨子里透着自信与强势。在任何场合你都能成为焦点，就像 BLACKPINK 所传达的——在你心里，你就是那朵最美的花。',
+        members: [{n:'Jisoo',p:'主唱·视觉'},{n:'Jennie',p:'全能·Rapper'},{n:'Rosé',p:'主唱'},{n:'Lisa',p:'主舞·主Rapper'}] },
+    'aespa':          { grad:'linear-gradient(135deg,#0d0020,#7B2FBE,#00e5ff)', emoji:'🤖💜', traits:'神秘 · 未来感 · 深邃 · 独特',  desc:'你的本命是 aespa！你是个生活在真实与虚拟边界的神秘存在，对科技与艺术都有独到见解。aespa 的 æ 世界正是你内心那个另一个自我——神秘、强大、无限可能。',
+        members: [{n:'Karina',p:'主舞·视觉'},{n:'Giselle',p:'主Rapper'},{n:'Winter',p:'主唱'},{n:'Ningning',p:'主唱'}] },
+    'IVE':            { grad:'linear-gradient(135deg,#000d30,#1a3a8f,#c9a84c)', emoji:'👑✨', traits:'高雅 · 成熟 · 从容 · 自我',    desc:'你的本命是 IVE！你散发着天生的从容与高级感，举手投足间流露成熟与优雅。IVE 的理念是"我就是我"——你清楚知道自己是谁、想要什么，你不追随，你引领潮流。',
+        members: [{n:'Yujin',p:'主唱·队长'},{n:'Gaeul',p:'主舞'},{n:'Rei',p:'唱跳'},{n:'Wonyoung',p:'视觉·主唱'},{n:'Liz',p:'主唱'},{n:'Leeseo',p:'舞蹈·Rapper'}] },
+    'ITZY':           { grad:'linear-gradient(135deg,#1a0a00,#FF6600,#FFD700)', emoji:'🔥⚡', traits:'活力 · 自我 · 叛逆 · 热情',    desc:'你的本命是 ITZY！你充满能量，不在乎他人眼光，活在自己的世界里。ITZY 的核心是"我不需要你的认可"——你天生闪亮，说做就做，永远充满干劲！',
+        members: [{n:'Yeji',p:'主舞·队长'},{n:'Lia',p:'主唱'},{n:'Ryujin',p:'主Rapper·舞蹈'},{n:'Chaeryeong',p:'主舞'},{n:'Yuna',p:'视觉·唱跳'}] },
+    'NMIXX':          { grad:'linear-gradient(135deg,#001a10,#00c853,#a020f0)', emoji:'🎭🎨', traits:'多才 · 前卫 · 艺术 · 多变',    desc:'你的本命是 NMIXX！你是多才多艺、难以被定义的艺术灵魂，永远充满惊喜，不被一种风格束缚。你对新奇事物充满好奇，是朋友圈里最有想法的那个。',
+        members: [{n:'Lily',p:'主唱'},{n:'Haewon',p:'主唱·队长'},{n:'Sullyoon',p:'视觉·主舞'},{n:'Kyujin',p:'主舞·Rapper'},{n:'Jiwoo',p:'唱跳'},{n:'Bae',p:'主Rapper'}] },
+    'TWICE':          { grad:'linear-gradient(135deg,#1a0010,#FF69B4,#FFB6C1)', emoji:'🌈💖', traits:'温暖 · 活力 · 甜美 · 真诚',    desc:'你的本命是 TWICE！你是那个温暖整个房间的人，笑容治愈一切。TWICE 传达纯粹的快乐与爱——你有感染所有人的正能量，真诚待人，是大家心中最可靠的存在。',
+        members: [{n:'Nayeon',p:'主唱'},{n:'Jeongyeon',p:'主唱'},{n:'Momo',p:'主舞'},{n:'Sana',p:'唱跳'},{n:'Jihyo',p:'主唱·队长'},{n:'Mina',p:'主舞'},{n:'Dahyun',p:'Rapper'},{n:'Chaeyoung',p:'主Rapper'},{n:'Tzuyu',p:'视觉'}] },
+    '(G)I-DLE':       { grad:'linear-gradient(135deg,#0d0020,#8B0000,#6a0dad)', emoji:'🎭💜', traits:'独立 · 创作 · 强烈 · 自主',    desc:'你的本命是 (G)I-DLE！你有强烈的创作欲和独立精神，不依附任何人，活在自己的艺术世界里。你有自己的想法，敢于表达，不在乎所谓规则——你的存在本身就是一种艺术。',
+        members: [{n:'Miyeon',p:'主唱'},{n:'Minnie',p:'主唱'},{n:'Soyeon',p:'主Rapper·队长'},{n:'Yuqi',p:'Rapper·唱'},{n:'Shuhua',p:'视觉'}] },
+    'BABYMONSTER':    { grad:'linear-gradient(135deg,#0a0a0a,#FF0040,#FF6600)', emoji:'👾🔥', traits:'炸裂 · 全能 · 年轻 · 霸气',    desc:'你的本命是 BABYMONSTER！你有着超越年龄的气场和全方位才能，爆发力十足。BABYMONSTER 用实力说话——就像你一样，不需要解释，实力让所有人闭嘴。年轻、霸气、无所畏惧！',
+        members: [{n:'Ruka',p:'主舞'},{n:'Pharita',p:'主唱'},{n:'Asa',p:'主唱'},{n:'Rami',p:'Rapper'},{n:'Ahyeon',p:'全能'},{n:'Rora',p:'主舞·Rapper'},{n:'Chiquita',p:'唱跳'}] },
+    'KISS OF LIFE':   { grad:'linear-gradient(135deg,#1a0500,#CC3300,#FFD700)', emoji:'💋🎵', traits:'复古 · 性感 · 艺术 · 灵魂',    desc:'你的本命是 KISS OF LIFE！你有令人着迷的复古灵魂，对音乐和艺术有超乎常人的品味。KISS OF LIFE 的 R&B funky 风格正是你内心的旋律——性感、有品、充满生命力，过目不忘。',
+        members: [{n:'Belle',p:'主唱·队长'},{n:'Julie',p:'主唱'},{n:'Natty',p:'主舞'},{n:'Jess',p:'Rapper·唱'}] },
+    'Hearts2Hearts':  { grad:'linear-gradient(135deg,#1a0015,#FF69B4,#B0E0E6)', emoji:'💝🌸', traits:'纯真 · 温柔 · 梦幻 · 真心',    desc:'你的本命是 Hearts2Hearts！你有最纯粹的心，对世界充满善意与爱。Hearts2Hearts 传递真心与温柔——就像你一样，用真诚打动所有人，是让每个人都感到被珍视的存在。',
+        members: [{n:'Chaeeun',p:'主唱'},{n:'Dain',p:'主舞'},{n:'Soeun',p:'Rapper'},{n:'Yujeong',p:'主唱'},{n:'Hyerim',p:'视觉'}] },
+    'KIIIKIII':       { grad:'linear-gradient(135deg,#001a1a,#FF1493,#00FFFF)', emoji:'🌈🎪', traits:'俏皮 · 活泼 · 独特 · 快乐',    desc:'你的本命是 KIIIKIII！你是充满个性的快乐源泉，总能给周围带来欢笑和惊喜。KIIIKIII 用独特和俏皮打破常规——就像你一样，用自己的方式诠释美，活得精彩且与众不同。',
+        members: [{n:'Soojin',p:'主舞·队长'},{n:'Lena',p:'主唱'},{n:'Nana',p:'Rapper'},{n:'Yeeun',p:'唱跳'},{n:'Yoona',p:'视觉'}] },
+    'MEOVV':          { grad:'linear-gradient(135deg,#050010,#4B0082,#606060)', emoji:'🐱🌙', traits:'神秘 · 冷艳 · 独立 · 魅惑',    desc:'你的本命是 MEOVV！你有猫一般的神秘气质——可以非常亲近，也能转瞬冷淡，让人捉摸不透。MEOVV 的"猫"概念正是你的化身：优雅、独立、充满魅力，从不刻意迎合，却让人想要靠近。',
+        members: [{n:'Soyeon',p:'主唱·队长'},{n:'Arin',p:'视觉'},{n:'Seoyeon',p:'主舞'},{n:'Yoona',p:'Rapper'},{n:'Jiae',p:'唱跳'}] },
+    'ILLIT':          { grad:'linear-gradient(135deg,#0a0015,#DDA0DD,#F0E6FF)', emoji:'🌸✨', traits:'梦幻 · 少女 · 浪漫 · 纯净',    desc:'你的本命是 ILLIT！你有如童话般的梦幻气质，内心住着一个永远相信美好的少女。ILLIT 的美在于那种纯净而浪漫的少女感——就像你一样，把生活变成了一首诗，每天都充满粉色泡泡般的美好想象。',
+        members: [{n:'Yunah',p:'主唱·队长'},{n:'Minju',p:'视觉'},{n:'Moka',p:'主舞'},{n:'Wonhee',p:'主唱'},{n:'Iroha',p:'舞蹈'}] },
+    'LE SSERAFIM':    { grad:'linear-gradient(135deg,#0a0a0a,#1a1a1a,#c9a84c)', emoji:'⚡👑', traits:'无畏 · 强大 · 坚定 · 自由',    desc:'你的本命是 LE SSERAFIM！你有着 Fearless 的灵魂，不被任何枷锁束缚。LE SSERAFIM 的精神就是无所畏惧地成为自己——就像你一样，用汗水和努力证明自己，你的力量来自内心深处。',
+        members: [{n:'Sakura',p:'主唱'},{n:'Chaewon',p:'主唱·队长'},{n:'Yunjin',p:'主唱'},{n:'Kazuha',p:'主舞'},{n:'Eunchae',p:'舞蹈·Rapper'}] }
+};
+
+const QUESTIONS = [
+    {
+        id: 'zodiac', num: 'Q1', text: '你的星座是什么？', cols: 3,
+        opts: ['白羊座 ♈','金牛座 ♉','双子座 ♊','巨蟹座 ♋','狮子座 ♌','处女座 ♍',
+               '天秤座 ♎','天蝎座 ♏','射手座 ♐','摩羯座 ♑','水瓶座 ♒','双鱼座 ♓']
+    },
+    {
+        id: 'position', num: 'Q2', text: '如果你是Kpop偶像，最想要的定位是？', cols: 1,
+        opts: ['🎤 主唱 — 用声音征服所有人','💃 主舞 — 用身体表达一切',
+               '🎙 主Rapper — 用节奏说出心声','👁 视觉担当 — 存在即美丽',
+               '✨ 全能艺人 — 唱跳Rap样样行']
+    },
+    {
+        id: 'mbti', num: 'Q3', text: '你的 MBTI 人格类型是？', cols: 4,
+        opts: ['INTJ','INTP','ENTJ','ENTP','INFJ','INFP','ENFJ','ENFP',
+               'ISTJ','ISFJ','ESTJ','ESFJ','ISTP','ISFP','ESTP','ESFP']
+    },
+    {
+        id: 'color', num: 'Q4', text: '你最喜欢的颜色是？', cols: 3,
+        opts: ['🖤 黑色','🤍 白色','🩷 粉色','❤️ 红色','🧡 橙色','💛 黄色',
+               '💚 绿色','💙 蓝色','💜 紫色','🩶 银/金属色','🌈 彩虹多色']
+    }
+];
+
+const SCORING = {
+    zodiac: {
+        '白羊座 ♈': { BLACKPINK:2, ITZY:2, 'LE SSERAFIM':2, BABYMONSTER:2, '(G)I-DLE':1 },
+        '金牛座 ♉': { TWICE:2, 'KISS OF LIFE':2, Hearts2Hearts:1, IVE:1 },
+        '双子座 ♊': { NMIXX:2, KIIIKIII:2, BABYMONSTER:1, ITZY:1 },
+        '巨蟹座 ♋': { TWICE:2, Hearts2Hearts:2, ILLIT:2, 'KISS OF LIFE':1 },
+        '狮子座 ♌': { BLACKPINK:2, ITZY:2, BABYMONSTER:2, 'LE SSERAFIM':1 },
+        '处女座 ♍': { IVE:2, aespa:1, NMIXX:1, 'LE SSERAFIM':1 },
+        '天秤座 ♎': { IVE:2, 'KISS OF LIFE':2, TWICE:1, KIIIKIII:1, ILLIT:1 },
+        '天蝎座 ♏': { BLACKPINK:2, aespa:2, '(G)I-DLE':2, MEOVV:2 },
+        '射手座 ♐': { ITZY:2, NMIXX:2, KIIIKIII:1, 'LE SSERAFIM':1 },
+        '摩羯座 ♑': { aespa:2, IVE:1, MEOVV:1, 'LE SSERAFIM':1 },
+        '水瓶座 ♒': { aespa:2, NMIXX:2, '(G)I-DLE':1, MEOVV:1 },
+        '双鱼座 ♓': { ILLIT:2, Hearts2Hearts:2, TWICE:1, 'KISS OF LIFE':1 }
+    },
+    position: {
+        '🎤 主唱 — 用声音征服所有人':  { TWICE:2, IVE:2, 'KISS OF LIFE':2, NMIXX:2, Hearts2Hearts:1 },
+        '💃 主舞 — 用身体表达一切':     { ITZY:2, 'LE SSERAFIM':2, KIIIKIII:2, MEOVV:1, BABYMONSTER:1 },
+        '🎙 主Rapper — 用节奏说出心声': { BLACKPINK:2, '(G)I-DLE':2, BABYMONSTER:2, 'LE SSERAFIM':1 },
+        '👁 视觉担当 — 存在即美丽':     { IVE:2, aespa:2, ILLIT:2, Hearts2Hearts:2, MEOVV:1 },
+        '✨ 全能艺人 — 唱跳Rap样样行': { NMIXX:2, BABYMONSTER:2, BLACKPINK:1, ITZY:1, '(G)I-DLE':1 }
+    },
+    mbti: {
+        INTJ: { aespa:2, '(G)I-DLE':2, MEOVV:2, 'LE SSERAFIM':1 },
+        INTP: { aespa:2, NMIXX:1, '(G)I-DLE':1, MEOVV:1 },
+        ENTJ: { BLACKPINK:2, 'LE SSERAFIM':2, BABYMONSTER:1, IVE:1 },
+        ENTP: { NMIXX:2, '(G)I-DLE':2, ITZY:1, KIIIKIII:1 },
+        INFJ: { aespa:2, Hearts2Hearts:2, MEOVV:1, ILLIT:1 },
+        INFP: { '(G)I-DLE':2, NMIXX:2, ILLIT:2, 'KISS OF LIFE':1 },
+        ENFJ: { TWICE:2, IVE:2, Hearts2Hearts:1, ILLIT:1 },
+        ENFP: { NMIXX:2, KIIIKIII:2, ITZY:1, ILLIT:1 },
+        ISTJ: { IVE:1, 'LE SSERAFIM':1, TWICE:1 },
+        ISFJ: { TWICE:2, Hearts2Hearts:2, IVE:1, ILLIT:1 },
+        ESTJ: { IVE:2, BLACKPINK:1, 'LE SSERAFIM':1 },
+        ESFJ: { TWICE:2, Hearts2Hearts:1, ILLIT:1, KIIIKIII:1 },
+        ISTP: { MEOVV:2, 'LE SSERAFIM':1, '(G)I-DLE':1 },
+        ISFP: { 'KISS OF LIFE':2, ILLIT:2, TWICE:1, KIIIKIII:1 },
+        ESTP: { BABYMONSTER:2, ITZY:2, 'LE SSERAFIM':1, BLACKPINK:1 },
+        ESFP: { ITZY:2, BABYMONSTER:2, BLACKPINK:1, KIIIKIII:1, 'KISS OF LIFE':1 }
+    },
+    color: {
+        '🖤 黑色':   { BLACKPINK:2, '(G)I-DLE':2, MEOVV:2, aespa:1, 'LE SSERAFIM':1, BABYMONSTER:1 },
+        '🤍 白色':   { IVE:2, 'LE SSERAFIM':2, ILLIT:1, Hearts2Hearts:1 },
+        '🩷 粉色':   { BLACKPINK:2, TWICE:2, ILLIT:1, Hearts2Hearts:1, KIIIKIII:1 },
+        '❤️ 红色':   { BLACKPINK:1, BABYMONSTER:2, '(G)I-DLE':1, 'KISS OF LIFE':1, ITZY:1 },
+        '🧡 橙色':   { ITZY:2, NMIXX:1, KIIIKIII:1, BABYMONSTER:1 },
+        '💛 黄色':   { ITZY:2, TWICE:1, KIIIKIII:1, NMIXX:1 },
+        '💚 绿色':   { NMIXX:2, KIIIKIII:1, ITZY:1 },
+        '💙 蓝色':   { IVE:2, Hearts2Hearts:1, TWICE:1, aespa:1 },
+        '💜 紫色':   { aespa:2, '(G)I-DLE':2, MEOVV:2, NMIXX:1 },
+        '🩶 银/金属色': { aespa:2, 'LE SSERAFIM':1, MEOVV:1, BABYMONSTER:1 },
+        '🌈 彩虹多色':  { KIIIKIII:2, NMIXX:2, TWICE:1, ITZY:1 }
+    }
+};
+
+/* ───── State ───── */
+let cur = 0;
+let scores = {};
+
+function initScores() {
+    scores = {};
+    Object.keys(GROUPS).forEach(g => scores[g] = 0);
+}
+
+function show(id) {
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function startQuiz() {
+    initScores();
+    cur = 0;
+    show('s-question');
+    renderQ();
+}
+
+function renderQ() {
+    const q = QUESTIONS[cur];
+    document.getElementById('prog-label').textContent = `问题 ${cur + 1} / ${QUESTIONS.length}`;
+    document.getElementById('prog-fill').style.width = `${((cur + 1) / QUESTIONS.length) * 100}%`;
+    document.getElementById('q-num').textContent = q.num;
+    document.getElementById('q-text').textContent = q.text;
+
+    const el = document.getElementById('opts');
+    el.className = `opts${q.cols > 1 ? ' c' + q.cols : ''}`;
+    el.innerHTML = '';
+    q.opts.forEach(o => {
+        const b = document.createElement('button');
+        b.className = 'opt';
+        b.textContent = o;
+        b.onclick = () => pick(o, b, q.id);
+        el.appendChild(b);
+    });
+}
+
+function pick(val, btn, qid) {
+    document.querySelectorAll('#opts .opt').forEach(b => b.classList.remove('selected'));
+    btn.classList.add('selected');
+
+    const pts = SCORING[qid][val];
+    if (pts) Object.entries(pts).forEach(([g, v]) => { if (scores[g] !== undefined) scores[g] += v; });
+
+    setTimeout(() => {
+        if (cur < QUESTIONS.length - 1) { cur++; renderQ(); }
+        else loading();
+    }, 380);
+}
+
+function loading() {
+    show('s-loading');
+    const msgs = ['分析你的星座特质…','匹配你的偶像定位…','解析你的 MBTI 性格…','调配你的专属色彩…','正在召唤你的本命…'];
+    let i = 0;
+    const el = document.getElementById('load-sub');
+    const iv = setInterval(() => { el.textContent = msgs[++i % msgs.length]; }, 550);
+    setTimeout(() => { clearInterval(iv); showResult(); }, 2800);
+}
+
+function showResult() {
+    const sorted = Object.entries(scores).sort(([,a],[,b]) => b - a);
+    const [top, topScore] = sorted[0];
+    const d = GROUPS[top];
+
+    document.getElementById('r-hero').style.background = d.grad;
+    document.getElementById('r-emoji').textContent = d.emoji;
+    document.getElementById('r-name').textContent = top;
+    document.getElementById('r-traits').textContent = d.traits;
+    document.getElementById('r-desc').textContent = d.desc;
+
+    const membersEl = document.getElementById('r-members');
+    membersEl.innerHTML = d.members.map(m =>
+        `<div class="member-card"><div class="member-name">${m.n}</div><div class="member-pos">${m.p}</div></div>`
+    ).join('');
+
+    const bars = document.getElementById('r-bars');
+    bars.innerHTML = '';
+    sorted.slice(0, 7).forEach(([g, sc]) => {
+        const pct = topScore > 0 ? Math.round(sc / topScore * 100) : 0;
+        const row = document.createElement('div');
+        row.className = 'match-item';
+        row.innerHTML = `<div class="match-name">${g}</div>
+            <div class="bar-track"><div class="bar-fill" data-w="${pct}%"></div></div>
+            <div class="bar-pct">${pct}%</div>`;
+        bars.appendChild(row);
+    });
+
+    show('s-result');
+    setTimeout(() => document.querySelectorAll('.bar-fill').forEach(b => b.style.width = b.dataset.w), 80);
+    confetti();
+}
+
+function confetti() {
+    const cols = ['#FF6B9D','#C77DFF','#FFD700','#00BFFF','#FF6600','#7FFF00'];
+    for (let i = 0; i < 70; i++) {
+        setTimeout(() => {
+            const p = document.createElement('div');
+            p.className = 'cf';
+            const sz = Math.random() * 9 + 4;
+            p.style.cssText = `left:${Math.random()*100}%;width:${sz}px;height:${sz}px;background:${cols[~~(Math.random()*cols.length)]};border-radius:${Math.random()>.5?'50%':'3px'};animation-duration:${(Math.random()*2+2).toFixed(1)}s;animation-delay:${(Math.random()*.8).toFixed(2)}s`;
+            document.body.appendChild(p);
+            setTimeout(() => p.remove(), 4500);
+        }, i * 40);
+    }
+}
+
+function resetQuiz() {
+    initScores();
+    cur = 0;
+    show('s-welcome');
+}
+</script>
+</body>
+</html>
